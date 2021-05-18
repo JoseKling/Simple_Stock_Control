@@ -14,16 +14,17 @@ Link: https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.214.5089&rep=rep
 
 import numpy as np
 import cv2 as cv
-from decoder import decoder
-from processing import processing
+from Scanner.decoder import decoder
+from Scanner.processing import processing
 
 #%% Functions
 
-def scanner():
+def scanner(device = 'http://192.168.42.129:8080/video'):
     code = np.zeros(12)
-    url = 'http://192.168.42.129:8080/video'
-    cap = cv.VideoCapture(url)
+    cap = cv.VideoCapture(device)
     ret, frame = cap.read()
+    if not ret:
+        raise Exception('Could not read video.')
     y_center = int(frame.shape[0]/2)
     x_center = int(frame.shape[1]/2)
     display_message = False
@@ -48,7 +49,7 @@ def scanner():
             if k == 27:
                 cap.release()
                 cv.destroyAllWindows()
-                exit()
+                return(False, 0)
             elif k == 13:
                 break
         code, check = decoder(processing(line))
@@ -56,7 +57,10 @@ def scanner():
             display_message = True
     cap.release()
     cv.destroyAllWindows()
-    return(code)
+    code_int = 0
+    for power, number in enumerate(code[::-1]):
+        code_int += number*(10**power)
+    return(True, int(code_int))
         
 if __name__ == '__main__':
     print(*scanner())
